@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 typedef struct incidenceList {
     struct incidenceList *next;
-    struct edge *edge;
+    int edgeIndex;
 } IncidenceList;
 
 typedef struct vertex {
@@ -13,117 +14,133 @@ typedef struct vertex {
 
 typedef struct edge {
     int weight;
-    struct vertex *start;
-    struct vertex *end;
+    int start;
+    int end;
 } Edge;
 
-int calculatePosition(int start, int end) {
-    int tmp;
 
-    if (start == 1) return end;
-    if (start == 2) return 6 + end;
-    if (start == 3) return 11 + end;
-    if (start == 4) return 15 + end;
-    if (start == 5) return 18 + end;
-    if (start == 6) return 21;
-}
+typedef struct graph {
+    struct vertex *vertices;
+    struct edge *edges;
+}Graph;
 
-struct incidenceList *makeIncidenceList() {
-    struct incidenceList *new = (struct incidenceList *)malloc(sizeof(struct incidenceList));
+IncidenceList *makeIncidenceList() {
+    IncidenceList *new = (IncidenceList *)malloc(sizeof(IncidenceList));
     new->next = NULL;
-    new->edge = NULL;
     return new;
 }
 
-void initGraph(Vertex *vertex, Edge *edge) {
+Graph *createGraph() {
+    Graph *g = (Graph *)malloc(sizeof(Graph));
+    g->edges = (Edge *)malloc(sizeof(Edge) * 22);
+    g->vertices = (Vertex *)malloc(sizeof(Vertex) * 7);
     for (int i = 1; i <= 6; i++) {
-        vertex[i].data = i;
-        vertex[i].incidence = makeIncidenceList();
+        g->vertices[i].data = i; // 각 정점의 data값. 이 문제에서는 인덱스와 같다.
+        g->vertices[i].incidence = makeIncidenceList();
     }
-    for (int i = 1; i <= 21; i++) {
-        if (1 <= i && i <= 6) {
-            edge[i].start = vertex[1];
-            edge[i].end = vertex[i];
-        }
-        if (7 <= i && i <= 11) {
-            edge[i].start = vertex[2];
-            edge[i].end = vertex[i - 6];
-        }
-        if () }
+    return g;
 }
 
-void changeWeight(Vertex *vertex, Edge *edge, int start, int end, int weight) {
-    IncidenceList *temp;
+// Edge의 양 끝점을 구분하기 쉽게 start, end를 오름차순으로 정렬
+void sortAscending(int *a, int *b) {
     int tmp;
-    if (end > start) {
-        tmp = end;
-        end = start;
-        start = end;
+    if (*a > *b) {
+        tmp = *a;
+        *a = *b;
+        *b = tmp;
     }
-    int position = calculatePosition(start, end);
-    temp = vertex[start].incidence;
-    while (temp->next != NULL) {
-        temp = temp->next;
-        if (temp->edge->end->data == end) break;
-    }
-    if (weight == 0) {
-        free(temp);
+}
+
+// start Vertex와 end Vertex에 따른 Edge배열의 몇번째 인덱스에 들어가야하는지 계산한다.
+int calculateEdgeIndex(int start, int end) {
+    if (start == 1)
+        return end;
+    if (start == 2)
+        return 5 + end;
+    if (start == 3)
+        return 9 + end;
+    if (start == 4)
+        return 12 + end;
+    if (start == 5)
+        return 14 + end;
+    return 21;
+}
+
+int hasVertex(int start, int end) {
+    if (start < 1)
+        return 0;
+    if (end > 6)
+        return 0;
+    return 1;
+}
+void insertEdge(Graph *g, int start, int end, int weight) {
+    sortAscending(&start, &end); // Edge를 구분하기 쉽게 시작점과 끝점을 오름차순으로 정렬
+    if (!hasVertex(start, end)) {
+        printf("-1\n");
         return;
     }
-    if (temp->next == NULL) {
-        temp->next = makeIncidenceList();
-        temp = temp->next;
-        temp->edge = &edge[position];
-    }
-    temp->edge->weight = weight;
-    temp->edge->start = &vertex[start];
-    temp->edge->end = &vertex[end];
+    int index = calculateEdgeIndex(start, end);
+    g->edges[index].start = start;
+    g->edges[index].end = end;
+    g->edges[index].weight = weight;
+    IncidenceList *new = makeIncidenceList();
+    
+    // Vertex가 가지는 IncidenceList에 해당 Edge를 추가한다.
+    new->edgeIndex = index;
+    new->next = g->vertices[start].incidence->next;
+    g->vertices[start].incidence->next = new;
 }
 
-void printEdgeWeight(Edge *edge, int nodeNumber) {
-    for (int i = 1; i <= 6; i++) {
-        if (edge[i].start->data == nodeNumber) {
-            printf(" %d", edge[i].start->data);
-            printf(" %d", edge[i].weight);
-        }
-        if (edge[i].end->data == nodeNumber) {
-            printf(" %d", edge[i].end->data);
-            printf(" %d", edge[i].weight);
-        }
+void printEdge(Graph *g, int number) {
+    if (number >= 7) {
+        printf("-1\n");
+        return;
+    }
+    for (int i = 1; i <= 21; i++) {
+        // start나 end가 해당하는 Vertex랑 일치하고 존재할 경우(weight != 0) 출력한다.
+        if (g->edges[i].start == number && g->edges[i].weight != 0)
+            printf(" %d %d", g->edges[i].end, g->edges[i].weight);
+        else if (g->edges[i].end == number && g->edges[i].weight != 0)
+            printf(" %d %d", g->edges[i].start, g->edges[i].weight);
     }
     printf("\n");
 }
 
-int main(void) {
-    Vertex vertex[6];
-    Edge edge[25];
-    char command;
-    int nodeNumber, start, end, weight;
+//문제 상황에 맞게 세팅한다.
+void setGrpah(Graph *g) {
+    insertEdge(g, 1, 2, 1);
+    insertEdge(g, 1, 3, 1);
+    insertEdge(g, 1, 4, 1);
+    insertEdge(g, 1, 6, 2);
+    insertEdge(g, 2, 3, 1);
+    insertEdge(g, 3, 5, 4);
+    insertEdge(g, 5, 5, 4);
+    insertEdge(g, 5, 6, 3);
+}
 
-    changeWeight(vertex, edge, 1, 2, 1);
-    changeWeight(vertex, edge, 1, 3, 1);
-    changeWeight(vertex, edge, 1, 4, 1);
-    changeWeight(vertex, edge, 1, 6, 2);
-    changeWeight(vertex, edge, 2, 3, 1);
-    changeWeight(vertex, edge, 3, 5, 4);
-    changeWeight(vertex, edge, 5, 5, 4);
-    changeWeight(vertex, edge, 5, 6, 3);
+int main() {
+    Graph *g = createGraph();
+    char command;
+    int number, start, end, weight;
+    
+    setGrpah(g);
     while (1) {
         scanf("%c", &command);
-        if (command == 'q') break;
-        switch (command) {
-            case 'a':
-                scanf("%d", &nodeNumber);
-                printEdgeWeight(edge, nodeNumber);
-                break;
-            case 'm':
-                scanf("%d %d %d", &start, &end, &weight);
-                changeWeight(vertex, edge, start, end, weight);
-                break;
-            default:
-                break;
-        }
+        if (command == 'q')
+            return 0;
+        switch (command)
+        {
+        case 'a':
+            scanf("%d", &number);
+            printEdge(g, number);
+            break;
+        case 'm' :
+            scanf("%d %d %d", &start, &end, &weight);
+            insertEdge(g, start, end , weight);
+        default:
+            break;
         getchar();
+        }
     }
     return 0;
 }
