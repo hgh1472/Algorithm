@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define NOT_EXIST 0
 
 typedef struct incidenceList {
     struct incidenceList *next;
@@ -24,21 +25,24 @@ typedef struct graph {
     struct edge *edges;
 }Graph;
 
-IncidenceList *makeIncidenceList() {
-    IncidenceList *new = (IncidenceList *)malloc(sizeof(IncidenceList));
-    new->next = NULL;
-    return new;
+int isNotVertex(int number) {
+    return number >= 7;
 }
 
-Graph *createGraph() {
-    Graph *g = (Graph *)malloc(sizeof(Graph));
-    g->edges = (Edge *)malloc(sizeof(Edge) * 22);
-    g->vertices = (Vertex *)malloc(sizeof(Vertex) * 7);
-    for (int i = 1; i <= 6; i++) {
-        g->vertices[i].data = i; // 각 정점의 data값. 이 문제에서는 인덱스와 같다.
-        g->vertices[i].incidence = makeIncidenceList();
-    }
-    return g;
+int isEdgeOf(int edge, int number) {
+    return edge == number;
+}
+
+int existEdge(int weight) {
+    return weight != NOT_EXIST;
+}
+
+int hasVertex(int start, int end) {
+    if (start < 1)
+        return 0;
+    if (end > 6)
+        return 0;
+    return 1;
 }
 
 // Edge의 양 끝점을 구분하기 쉽게 start, end를 오름차순으로 정렬
@@ -66,13 +70,23 @@ int calculateEdgeIndex(int start, int end) {
     return 21;
 }
 
-int hasVertex(int start, int end) {
-    if (start < 1)
-        return 0;
-    if (end > 6)
-        return 0;
-    return 1;
+IncidenceList *makeIncidenceList() {
+    IncidenceList *new = (IncidenceList *)malloc(sizeof(IncidenceList));
+    new->next = NULL;
+    return new;
 }
+
+Graph *createGraph() {
+    Graph *g = (Graph *)malloc(sizeof(Graph));
+    g->edges = (Edge *)malloc(sizeof(Edge) * 22);
+    g->vertices = (Vertex *)malloc(sizeof(Vertex) * 7);
+    for (int i = 1; i <= 6; i++) {
+        g->vertices[i].data = i; // 각 정점의 data값. 이 문제에서는 인덱스와 같다.
+        g->vertices[i].incidence = makeIncidenceList();
+    }
+    return g;
+}
+
 void insertEdge(Graph *g, int start, int end, int weight) {
     sortAscending(&start, &end); // Edge를 구분하기 쉽게 시작점과 끝점을 오름차순으로 정렬
     if (!hasVertex(start, end)) {
@@ -92,15 +106,15 @@ void insertEdge(Graph *g, int start, int end, int weight) {
 }
 
 void printEdge(Graph *g, int number) {
-    if (number >= 7) {
+    if (isNotVertex(number)) {
         printf("-1\n");
         return;
     }
     for (int i = 1; i <= 21; i++) {
         // start나 end가 해당하는 Vertex랑 일치하고 존재할 경우(weight != 0) 출력한다.
-        if (g->edges[i].start == number && g->edges[i].weight != 0)
+        if (isEdgeOf(g->edges[i].start, number) && existEdge(g->edges[i].weight))
             printf(" %d %d", g->edges[i].end, g->edges[i].weight);
-        else if (g->edges[i].end == number && g->edges[i].weight != 0)
+        else if (isEdgeOf(g->edges[i].end, number) && existEdge(g->edges[i].weight))
             printf(" %d %d", g->edges[i].start, g->edges[i].weight);
     }
     printf("\n");
