@@ -21,6 +21,7 @@ Node *getNode();
 Node *reduceExternal(Node *z, Node **root);
 void searchAndFixAfterInsertion(Node *w, Node **head);
 Node *restructure(Node *x, Node *y, Node *z, Node **head);
+
 int max(int a, int b) {
     if (a > b)
         return a;
@@ -28,6 +29,9 @@ int max(int a, int b) {
         return b;
 }
 
+/*
+새로운 노드를 생성 후 반환해주는 함수.
+*/
 Node *getNode() {
     Node *new = (Node *)malloc(sizeof(Node));
 
@@ -39,12 +43,12 @@ Node *getNode() {
 }
 
 Node *treeSearch(Node *v, int k) {
-    if (isExternal(v)) return v;
+    if (isExternal(v)) return v;  // 해당하는 key값의 노드가 없다.
     if (k == v->key)
         return v;
-    else if (k < v->key)
+    else if (k < v->key)  // 찾는 key값이 해당 노드 값보다 작다면 왼쪽 부트리 탐색
         return treeSearch(v->left, k);
-    else
+    else  // 찾는 key값이 해당 노드 값보다 크다면 오른쪽 부트리 탐색
         return treeSearch(v->right, k);
 }
 

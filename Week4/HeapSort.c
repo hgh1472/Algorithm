@@ -18,14 +18,12 @@ void downHeap(int i);
 void buildHeap();
 void printArray();
 
-void inPlaceHeapSort()
-{
+void inPlaceHeapSort() {
     int tmp;
     int i = n;
 
     buildHeap();
-    while (n > 1)
-    {
+    while (n > 1) {
         SWAP(H[1], H[n], tmp);
         n--;
         downHeap(1);
@@ -33,39 +31,28 @@ void inPlaceHeapSort()
     n = i;
     printArray();
 }
-void downHeap(int i)
-{
-    if (2 * i > n)
-        return;
+void downHeap(int i) {
+    if (2 * i > n) return;
 
     int larger = 2 * i, tmp;
-    if (2 * i + 1 <= n)
-    {
-        if (H[2 * i + 1] > H[larger])
-            larger = 2 * i + 1;
+    if (2 * i + 1 <= n) {
+        if (H[2 * i + 1] > H[larger]) larger = 2 * i + 1;
     }
-    if (H[i] > H[larger])
-        return;
+    if (H[i] > H[larger]) return;
     SWAP(H[i], H[larger], tmp);
     downHeap(larger);
 }
 
-void buildHeap()
-{
-    for (int i = n / 2; i >= 1; i--)
-        downHeap(i);
+void buildHeap() {
+    for (int i = n / 2; i >= 1; i--) downHeap(i);
 }
 
-void printArray()
-{
-    for (int i = 1; i <= n; i++)
-        printf(" %d", H[i]);
+void printArray() {
+    for (int i = 1; i <= n; i++) printf(" %d", H[i]);
     printf("\n");
 }
-int main()
-{
+int main() {
     scanf("%d", &n);
-    for (int i = 1; i <= n; i++)
-        scanf("%d", &H[i]);
+    for (int i = 1; i <= n; i++) scanf("%d", &H[i]);
     inPlaceHeapSort();
 }
