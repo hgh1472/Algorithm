@@ -3,100 +3,120 @@
 
 #define EMPTY 0
 #define INACTIVE -1
+#define ERROR -1
 
-int applyHashFunction(int x, int M) {
-    return x % M;
+int *initBuckeyArray(int *hashTable, int M) {
+    hashTable = (int *)malloc(sizeof(int) * M);
+    for (int i = 0; i < M; i++) hashTable[i] = EMPTY;
+    return hashTable;
 }
 
-int isFull(int countCollsion, int M) {
-    if (countCollsion >= M)
-        return 1;
-    return 0;
-}
+int applyHashFunction(int x, int M) { return x % M; }
 
-// key를 삽입할 때 hashTable[position]이 비어있거나, 해시테이블이 꽉 차있으면 탐색을 그만둡니다.
-int shouldCheckNextForInsert(int *hashTable, int position, int M, int countCollsion) {
-    if (hashTable[position] <= 0)
-        return 0;
-    if (isFull(countCollsion, M))
-        return 0;
-    return 1;
-}
+int isEmpty(int *hashTable, int position) { return hashTable[position] == EMPTY; }
 
-int shouldCheckNextForFindOrDelete(int *hashTable, int key, int position, int M, int countCollsion) {
-    // hashTable[position]이 비어있거나 해당 key일 경우 탐색을 그만둡니다.
-    if (hashTable[position] == EMPTY || hashTable[position] == key)
-        return 0;
-    // 해시테이블에 키가 모두 차있으면 탐색을 그만둡니다.
-    if (isFull(countCollsion, M))
-        return 0;
-    return 1;
-}
+int getNextBucket(int position, int countCollision, int M) { return (position + countCollision) % M; }
 
-// 탐색하는 인덱스는 배열의 인덱스이므로 배열의 범위 초과 시 다시 0으로 돌아갑니다.
-int movePosition(int position, int M) {
-    position++;
-    if (position == M)
-        position = 0;
-    return position;
-}
+int isInactive(int *hashTable, int position) { return hashTable[position] == INACTIVE; }
 
 // 충돌횟수만큼 C를 출력합니다.
 void printCountCollision(int countCollision) {
-    for (int i = 0; i < countCollision; i++)
-        printf("C");
+    for (int i = 0; i < countCollision; i++) printf("C");
+}
+
+void printFullHashTableErrorMessage(int countCollision) {
+    printCountCollision(countCollision);
+    printf("%d\n", ERROR);
+}
+
+void printNoneExistentKeyErrorMessage(int countCollsion) {
+    printCountCollision(countCollsion);
+    printf("%d\n", ERROR);
 }
 
 void insertItem(int *hashTable, int key, int M) {
     int position = applyHashFunction(key, M);
     int countCollision = 0;
-    while (shouldCheckNextForInsert(hashTable, position, M, countCollision)) {
-        // position을 다음 위치로 옮기고, 충돌 횟수를 증가시킵니다.
-        position = movePosition(position, M);
-        countCollision++;
+    int b;
+
+    /*
+    countCollision = M 이면, 테이블이 꽉 차있다는 것이다.
+    따라서 최대 countCollision < M 인 동안 반복한다.
+    이는 모든 셀을 검사하는 것과 같다.
+    */
+    while (countCollision < M) {
+        b = getNextBucket(position, countCollision, M);
+        if (isEmpty(hashTable, b) || isInactive(hashTable, b)) {  // 비어있거나 비활성화 상태라면 삽입한다.
+            hashTable[b] = key;
+            printCountCollision(countCollision);
+            printf("%d\n", b);
+            return;
+        } else  // 셀이 ACTIVE 상태라면 다음 셀로 넘어간다.
+            countCollision++;
     }
-    printCountCollision(countCollision);
-    if (countCollision == M)
-        printf("-1\n");
-    else {
-        hashTable[position] = key;
-        printf("%d\n", position);
-    }
+
+    // 테이블이 꽉 차있는 경우.
+    printFullHashTableErrorMessage(countCollision);
 }
 
 void findElement(int *hashTable, int key, int M) {
     int position = applyHashFunction(key, M);
-    int countCollsion = 0;
-    while (shouldCheckNextForFindOrDelete(hashTable, key, position, M, countCollsion)) {
-        // position을 다음 위치로 옮기고, 충돌 횟수를 증가시킵니다.
-        position = movePosition(position, M);
-        countCollsion++;
-    }
-    if (hashTable[position] != key) {
-        printCountCollision(countCollsion);
-        printf("-1\n");
-        return;
-    }
-    printCountCollision(countCollsion);
-    printf("%d\n", position);
-}
-
-
-void deleteElement(int *hashTable, int key, int M) {
-    int position = applyHashFunction(key ,M);
     int countCollision = 0;
-    while (shouldCheckNextForFindOrDelete(hashTable, key, position, M, countCollision)) {
-        position = movePosition(position, M);
-        countCollision++;
+    int b;
+
+    /*
+    countCollision = M 이면, 테이블이 꽉 차있다는 것이다.
+    따라서 최대 countCollision < M 인 동안 반복한다.
+    이는 모든 셀을 검사하는 것과 같다.
+    */
+    while (countCollision < M) {
+        b = getNextBucket(position, countCollision, M);
+        if (isEmpty(hashTable, b)) {  // 비어 있는 셀을 만나면 탐색 실패
+            printCountCollision(countCollision);
+            printf("%d\n", ERROR);
+            return;
+        } else if (key == hashTable[b]) {  // key값을 찾은 경우.
+            printCountCollision(countCollision);
+            printf("%d\n", b);
+            return;
+        } else  // 다른 값이 있거나, INACTIVE인 경우
+            countCollision++;
     }
-    printCountCollision(countCollision);
-    if (hashTable[position] == key) {
-        hashTable[position] = INACTIVE;
-        printf("%d\n", position);
-    }
-    else
-        printf("-1\n");
+
+    // 전체를 탐색했지만, key값이 존재하지 않는 경우
+    printNoneExistentKeyErrorMessage(countCollision);
 }
+
+void removeElement(int *hashTable, int key, int M) {
+    int position = applyHashFunction(key, M);
+    int countCollision = 0;
+    int b;
+
+    /*
+    countCollision = M 이면, 테이블이 꽉 차있다는 것이다.
+    따라서 최대 countCollision < M 인 동안 반복한다.
+    이는 모든 셀을 검사하는 것과 같다.
+    */
+    while (countCollision < M) {
+        b = getNextBucket(position, countCollision, M);
+        if (isEmpty(hashTable, b)) {  // 비어 있는 셀을 만나면 탐색 실패
+            printCountCollision(countCollision);
+            printf("%d\n", ERROR);
+            return;
+        } else if (key == hashTable[b]) {  // 발견한다면, 해당 셀을 INACTIVE로 바꾼다.
+            hashTable[b] = INACTIVE;
+            printCountCollision(countCollision);
+            printf("%d\n", b);
+            return;
+        } else  // 다른 값으로 차있거나 INACTIVE인 경우
+            countCollision++;
+    }
+
+    // 전체를 탐색했지만, key값이 존재하지 않는 경우
+    printNoneExistentKeyErrorMessage(countCollision);
+}
+
+void freeHashTable(int *hashTable) { free(hashTable); }
 
 int main() {
     int M, key, *hashTable;
@@ -104,7 +124,7 @@ int main() {
 
     scanf("%d", &M);
     getchar();
-    hashTable = (int *)malloc(sizeof(int) * M);
+    hashTable = initBuckeyArray(hashTable, M);
     while (1) {
         scanf("%c", &command);
         if (command == 'e') return 0;
@@ -117,16 +137,12 @@ int main() {
                 findElement(hashTable, key, M);
                 break;
             case 'd':
-                deleteElement(hashTable, key, M);
+                removeElement(hashTable, key, M);
                 break;
             default:
                 break;
         }
         getchar();
     }
+    freeHashTable(hashTable);
 }
-
-/*
-10, 11, 3, 1, 2, 5, 7
-7 1 2 10 11 3 5
-*/

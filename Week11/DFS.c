@@ -4,6 +4,7 @@
 #define NOT_EXIST 0
 #define VISITED 1
 #define FRESH 0
+
 typedef struct incidenceList {
     struct incidenceList *next;
     int edgeIndex;
@@ -21,11 +22,10 @@ typedef struct edge {
     int end;
 } Edge;
 
-
 typedef struct graph {
     struct vertex *vertices;
     struct edge *edges;
-}Graph;
+} Graph;
 
 // Edge의 양 끝점을 구분하기 쉽게 start, end를 오름차순으로 정렬
 void sortAscending(int *a, int *b) {
@@ -45,7 +45,7 @@ IncidenceList *makeIncidenceList() {
 
 Graph *createGraph(int vertices, int edges) {
     Graph *g = (Graph *)malloc(sizeof(Graph));
-    g->vertices = (Vertex *)malloc(sizeof(Vertex) * (vertices + 1)); // 인덱스와 data값을 일치시키기 위해 +1을 한다.
+    g->vertices = (Vertex *)malloc(sizeof(Vertex) * (vertices + 1));  // 인덱스와 data값을 일치시키기 위해 +1을 한다.
     g->edges = (Edge *)malloc(sizeof(Edge) * (edges));
     for (int i = 1; i <= vertices; i++) {
         g->vertices[i].data = i;
@@ -57,11 +57,10 @@ Graph *createGraph(int vertices, int edges) {
 
 // 탐색을 초기화할 때 사용한다. 이 문제에서는 사용 X
 void setGraphFresh(Graph *g, int countOfVertices) {
-    for (int i = 1; i <= countOfVertices; i++)
-        g->vertices[i].isVisited = FRESH;
+    for (int i = 1; i <= countOfVertices; i++) g->vertices[i].isVisited = FRESH;
 }
 
-//Graph g의 Edge배열에 생성된 Edge가 들어갈 자리를 찾는다.
+// Graph g의 Edge배열에 생성된 Edge가 들어갈 자리를 찾는다.
 int findInsertIndex(Graph *g) {
     int i = 0;
     while (g->edges[i].start != 0) {
@@ -72,24 +71,22 @@ int findInsertIndex(Graph *g) {
 
 // Edge의 한 부분의 vertex가 주어졌을 때 반대편 vertex를 반환하는 함수
 int getOppositeVertex(Edge edge, int vertex) {
-    if (edge.start == vertex)
-        return edge.end;
+    if (edge.start == vertex) return edge.end;
     return edge.start;
 }
 
 /*
 fixedVertex는 하나의 IncidenceList를 삽입할 때, 시작점의 Vertex를 말한다.
-insertedVertex는 하나의 IncidenceList를 삽입할 때, 시작점의 Vertex의 관점에서 연결되어 있는 Vertex 말한다. 
+insertedVertex는 하나의 IncidenceList를 삽입할 때, 시작점의 Vertex의 관점에서 연결되어 있는 Vertex 말한다.
 */
 void insertIncidenceList(Graph *g, int fixedVertex, int insertedVertex, int index) {
     IncidenceList *vertexIncidence = makeIncidenceList();
     IncidenceList *temp = g->vertices[fixedVertex].incidence;
-    
+
     vertexIncidence->edgeIndex = index;
     // 오름차순으로 삽입
     while (temp->next != NULL) {
-        if (insertedVertex < getOppositeVertex(g->edges[temp->next->edgeIndex], fixedVertex))
-            break;
+        if (insertedVertex < getOppositeVertex(g->edges[temp->next->edgeIndex], fixedVertex)) break;
         temp = temp->next;
     }
     vertexIncidence->next = temp->next;
@@ -97,12 +94,12 @@ void insertIncidenceList(Graph *g, int fixedVertex, int insertedVertex, int inde
 }
 
 void insertEdge(Graph *g, int first, int second, int weight) {
-    sortAscending(&first, &second); // Edge를 구분하기 쉽게 시작점과 끝점을 오름차순으로 정렬
+    sortAscending(&first, &second);  // Edge를 구분하기 쉽게 시작점과 끝점을 오름차순으로 정렬
     int index = findInsertIndex(g);
     g->edges[index].start = first;
     g->edges[index].end = second;
     g->edges[index].weight = weight;
-    
+
     // 한 Edge의 두 정점에 Incidence를 삽입한다.
     insertIncidenceList(g, first, second, index);
     insertIncidenceList(g, second, first, index);
@@ -110,13 +107,12 @@ void insertEdge(Graph *g, int first, int second, int weight) {
 
 void DFS(int vertexNumber, Graph *g) {
     g->vertices[vertexNumber].isVisited = VISITED;
-    printf("%d\n",g->vertices[vertexNumber].data);
+    printf("%d\n", g->vertices[vertexNumber].data);
     IncidenceList *temp = g->vertices[vertexNumber].incidence;
     while (temp->next != NULL) {
         temp = temp->next;
         int oppositeVertex = getOppositeVertex(g->edges[temp->edgeIndex], vertexNumber);
-        if (g->vertices[oppositeVertex].isVisited == FRESH)
-            DFS(oppositeVertex, g);
+        if (g->vertices[oppositeVertex].isVisited == FRESH) DFS(oppositeVertex, g);
     }
 }
 
@@ -126,7 +122,7 @@ int main() {
     Graph *g;
 
     scanf("%d %d %d", &countOfVertices, &countOfEdges, &startVertex);
-    g = createGraph(countOfVertices,countOfEdges);
+    g = createGraph(countOfVertices, countOfEdges);
 
     for (int i = 0; i < countOfEdges; i++) {
         scanf("%d %d", &firstVertexOfEdge, &secondVertexOfEdge);
