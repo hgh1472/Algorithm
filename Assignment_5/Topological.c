@@ -266,6 +266,5 @@ int main() {
     topologicalSort(g);
 
     freeGraph(g);
-	system("leaks a.out");
     return 0;
 }
