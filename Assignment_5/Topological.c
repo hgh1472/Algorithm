@@ -51,6 +51,7 @@ Vertex *getVertex() {
     new->inEdges = getIncidenceList();
     new->outEdges = getIncidenceList();
     new->isVisited = NOT_VISITED;
+    return new;
 }
 
 Edge *getEdge() {
@@ -160,7 +161,7 @@ Graph *setGraph() {
     return new;
 }
 
-void insertDirectedEdge(Graph *g, int origin, int destination, int index) {
+void insertDirectedEdge(Graph *g, int origin, int destination) {
     Edge *tempEdge = g->edges->next;
     // 비어있는 공간을 찾은 후, 해당 공간에 Edge에 대한 정보를 주입한다.
     while (!isEmptyEdge(tempEdge)) tempEdge = tempEdge->next;
@@ -192,12 +193,12 @@ Graph *buildGraph() {
 
     for (int i = 0; i < g->countOfEdges; i++) {
         scanf("%d %d", &origin, &destination);
-        insertDirectedEdge(g, origin, destination, i);
+        insertDirectedEdge(g, origin, destination);
     }
     return g;
 }
 
-void topologicalSortDFS(Graph *g, Stack *s, Vertex *vertex) {
+void topologicalSortDFS(Stack *s, Vertex *vertex) {
     IncidenceList *tempIncidenceList;
     Vertex *oppositeVertex;
 
@@ -245,7 +246,6 @@ void topologicalSortDFS(Graph *g, Stack *s, Vertex *vertex) {
 
 void topologicalSort(Graph *g) {
     Vertex *tempVertex = g->vertices;
-    IncidenceList *tempIncidenceList;
 
     // 스택을 생성한다.
     Stack *s = getStack(g->countOfVertices);
@@ -253,7 +253,7 @@ void topologicalSort(Graph *g) {
     while (tempVertex->next != NULL) {  // 모든 vertex에 대해 topologicalSortDFS를 수행한다.
         tempVertex = tempVertex->next;
         if (tempVertex->isVisited == NOT_VISITED) {
-            topologicalSortDFS(g, s, tempVertex);
+            topologicalSortDFS(s, tempVertex);
         }
     }
     freeStack(s);
@@ -266,6 +266,6 @@ int main() {
     topologicalSort(g);
 
     freeGraph(g);
-
+	system("leaks a.out");
     return 0;
 }
