@@ -3,6 +3,9 @@
 
 #define INQUEUE 0
 #define NOTINQUEUE 1
+
+#define NONE_EXIST
+
 typedef struct adjacencyList {
     struct edge *Edge;
     struct adjacencyList *next;
@@ -24,16 +27,9 @@ typedef struct edge {
 typedef struct graph {
     Vertex *vertices;
     Edge *edges;
+    int countOfVertices;
+    int countOfEdges;
 } Graph;
-
-typedef struct mst {
-    int *distance;
-} MST;
-
-typedef struct heap {
-    int *arr;
-    int n;
-} Heap;
 
 AdjacencyList *getAdjacencyList() {
     AdjacencyList *new = (AdjacencyList *)malloc(sizeof(AdjacencyList));
@@ -66,39 +62,38 @@ Vertex *getVertexpointer(Graph *g, int vertex) {
     return tempVertex;
 }
 
-Graph *initGraph(int countVertex, int countEdge) {
-    Graph *g = (Graph *)malloc(sizeof(Graph));
-    g->vertices = getVertex();
-    g->edges = getEdge();
+Graph *initGraph() {
+    scanf("%d %d", &countOfVertices, &countOfEdges);
 
-    Vertex *tempVertex = g->vertices;
-    for (int i = 0; i < countVertex; i++) {
-        tempVertex->vertexNumber = (i + 1);
-        tempVertex->next = getVertex();
+    Graph *new = (Graph *)malloc(sizeof(Graph));
+    new->vertices = getVetex();
+    new->Edges = getEdge();
+    new->countOfVertices = countOfVertices;
+    new->countOfEdges = countOfEdges;
+
+    Vertex *tempVertex = new->vertices;
+    for (int i = 1; i <= countOfVertices; i++) {
+        tempVertex->next = getVetex();
         tempVertex = tempVertex->next;
+        tempVertex->vertexNumber = i;
     }
-
-    Edge *tempEdge = g->edges;
-    for (int i = 0; i < countEdge; i++) {
+    Edge *tempEdge = new->Edges;
+    for (int i = 0; i < countOfEdges; i++) {
         tempEdge->next = getEdge();
         tempEdge = tempEdge->next;
+        tempEdge->weight = NOT_CONNECT;
+        tempEdge->firstVertex = NULL;
+        tempEdge->secondVertex = NULL;
     }
-    return g;
+    return new;
 }
 
-int getVertexCount(Graph *g) {
-    int count = 0;
-    Vertex *temp = g->vertices;
-    while (temp->next != NULL) {
-        temp = temp->next;
-        count++;
-    }
-    return count;
-}
+int isEmptyEdge(Edge *edge) { return edge->weight == NONE_EXIST; }
+
 void insertEdge(Graph *g, int firstVertex, int secondVertex, int weight) {
     Edge *tempEdge = g->edges;
 
-    while (tempEdge->weight != 0) tempEdge = tempEdge->next;
+    while (!isEmptyEdge(tempEdge)) tempEdge = tempEdge->next;
     tempEdge->firstVertex = getVertexpointer(g, firstVertex);
     tempEdge->secondVertex = getVertexpointer(g, secondVertex);
     tempEdge->weight = weight;
@@ -116,7 +111,7 @@ void insertEdge(Graph *g, int firstVertex, int secondVertex, int weight) {
     tempAdjacencyList->Edge = tempEdge;
 }
 
-void setGraph(Graph *g, int countVertex, int countEdge) {
+void setGraph(Graph *g) {
     int firstVertex, secondVertex, weight;
 
     for (int i = 0; i < countEdge; i++) {
@@ -142,14 +137,37 @@ int findMin(int *distance, int count, int *isQueue) {
     return i;
 }
 
+Graph *initMST(Graph *g) {
+    Graph *g = (Graph *)malloc(sizeof(Graph));
+    g->vertices = getVertex();
+    g->edges = getEdge();
+    g->countOfVertices = g->countOfVertices;
+    g->countOfEdges = g->countOfVertices - 1;
+
+    Vertex *tempVertex = g->vertices;
+    for (int i = 0; i < countVertex; i++) {
+        tempVertex->vertexNumber = (i + 1);
+        tempVertex->next = getVertex();
+        tempVertex = tempVertex->next;
+    }
+
+    Edge *tempEdge = g->edges;
+    for (int i = 0; i < countEdge; i++) {
+        tempEdge->next = getEdge();
+        tempEdge = tempEdge->next;
+    }
+    return g;
+}
+
 void makeMST(Graph *g, int startVertex) {
-    Heap h;
-    MST mst;
+    Graph *MST;
     Edge *tempEdge;
     AdjacencyList *tempAdjacencyList;
-    int count = getVertexCount(g);
+    int count = g->countOfVertices;
+
+    MST = initMST(g);
     int totalWeight = 0;
-    int *isinQueue = (int *)malloc(sizeof(int) * (count + 1));
+    int *isinQueue = (int *)malloc(sizeof(int) * (g->countOfVertices + 1));
     int opposite;
 
     tempAdjacencyList = getVertexpointer(g, 2)->edgeList;
@@ -157,10 +175,9 @@ void makeMST(Graph *g, int startVertex) {
         tempAdjacencyList = tempAdjacencyList->next;
         if (tempAdjacencyList->Edge == NULL) printf("1\n");
     }
-    h.arr = (int *)malloc(sizeof(int) * (count + 1));
-    mst.distance = (int *)malloc(sizeof(int) * (count + 1));
-    for (int i = 0; i <= count; i++) mst.distance[i] = 2147483647;
-    mst.distance[startVertex] = 0;
+    int *distance = (int *)malloc(sizeof(int) * (count + 1));
+    for (int i = 0; i <= count; i++) distance[i] = 2147483647;
+    distance[startVertex] = 0;
     printf(" %d", startVertex);
     while (count > 1) {
         isinQueue[startVertex] = NOTINQUEUE;
@@ -168,8 +185,9 @@ void makeMST(Graph *g, int startVertex) {
         while (tempAdjacencyList->next != NULL) {
             tempAdjacencyList = tempAdjacencyList->next;
             opposite = getOppositeVertex(tempAdjacencyList->Edge, startVertex);
-            if (isinQueue[opposite] == INQUEUE && tempAdjacencyList->Edge->weight < mst.distance[opposite]) {
-                mst.distance[opposite] = tempAdjacencyList->Edge->weight;
+            if (isinQueue[opposite] == INQUEUE && tempAdjacencyList->Edge->weight < distance[opposite]) {
+                distance[opposite] = tempAdjacencyList->Edge->weight;
+                insertEdge(MST, tempAdjacencyList->Edge->firstVertex, tempAdjacencyList->Edge->secondVertex, tempAdjacencyList->Edge->weight);
             }
         }
         startVertex = findMin(mst.distance, getVertexCount(g), isinQueue);
@@ -179,15 +197,14 @@ void makeMST(Graph *g, int startVertex) {
     }
     printf("\n%d\n", totalWeight);
 }
+
 int main() {
-    int countVertex, countEdge, weight;
     int firstVertex, secondVertex;
     Graph *g;
 
-    scanf("%d %d", &countVertex, &countEdge);
-    g = initGraph(countVertex, countEdge);
+    g = initGraph();
 
-    setGraph(g, countVertex, countEdge);
+    setGraph(g);
 
     makeMST(g, 1);
     return 0;
